@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="https://www.gstatic.com/antigravity/web/dev/tailwindcss.min.js"></script>
+  <style>
+    @keyframes pulse-ring {
+      0% { transform: scale(0.96); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+      70% { transform: scale(1); box-shadow: 0 0 0 16px rgba(239, 68, 68, 0); }
+      100% { transform: scale(0.96); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+    }
+    .panic-anim {
+      animation: pulse-ring 2s infinite;
+    }
+  </style>
+</head>
+<body class="bg-[var(--background)] text-[var(--foreground)] antialiased p-4 sm:p-6 min-h-screen">
+
+  <div class="max-w-4xl mx-auto space-y-5">
+    
+    <!-- HEADER -->
+    <header class="bg-[var(--card)] border border-[var(--border)] rounded-2xl p-4 shadow-sm flex items-center justify-between">
+      <div class="flex items-center space-x-3">
+        <div class="w-12 h-12 rounded-xl bg-blue-600 text-white flex items-center justify-center font-black text-xl shadow-md">
+          🏡
+        </div>
+        <div>
+          <div class="flex items-center space-x-2">
+            <h1 class="text-xl font-bold tracking-tight">Mi Barrio</h1>
+            <span class="bg-emerald-500/10 text-emerald-600 border border-emerald-500/20 text-xs font-semibold px-2.5 py-0.5 rounded-full">Red Vecinal Activa</span>
+          </div>
+          <p class="text-xs text-[var(--muted-foreground)]">Barrio San Martín • Cuadrante 3 • Vecino: Ana Morales (Verificado)</p>
+        </div>
+      </div>
+      <button onclick="triggerPanicSOS('SOS_RAPIDO', 'Auxilio Inmediato S.O.S')" class="bg-red-600 hover:bg-red-700 active:scale-95 text-white font-bold text-xs px-4 py-2.5 rounded-xl shadow-md transition flex items-center space-x-1.5">
+        <span>🚨</span>
+        <span>S.O.S RÁPIDO</span>
+      </button>
+    </header>
+
+    <!-- BANNER DE ALERTA DINÁMICA -->
+    <div id="liveAlertBanner" class="hidden bg-red-600 text-white px-4 py-3 rounded-xl shadow-lg flex items-center justify-between text-xs font-medium">
+      <div class="flex items-center space-x-2">
+        <span class="relative flex h-3 w-3">
+          <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-200 opacity-75"></span>
+          <span class="relative inline-flex rounded-full h-3 w-3 bg-white"></span>
+        </span>
+        <span id="liveAlertMessage">🚨 ALERTA COMUNITARIA EN CURSO</span>
+      </div>
+      <button onclick="dismissAlert()" class="bg-red-800 hover:bg-red-900 text-white px-3 py-1 rounded-lg text-xs font-semibold">
+        Cerrar Alerta
+      </button>
+    </div>
+
+    <!-- TABS DE NAVEGACIÓN -->
+    <div class="flex border-b border-[var(--border)] gap-2 overflow-x-auto pb-1 text-sm font-semibold">
+      <button onclick="selectTab('seguridad')" id="btn-seguridad" class="tab-item py-2.5 px-4 rounded-xl bg-blue-600 text-white transition flex items-center space-x-2 whitespace-nowrap">
+        <span>🛡️</span>
+        <span>Seguridad & Pánico</span>
+      </button>
+      <button onclick="selectTab('comercio')" id="btn-comercio" class="tab-item py-2.5 px-4 rounded-xl text-[var(--muted-foreground)] hover:bg-[var(--card)] transition flex items-center space-x-2 whitespace-nowrap">
+        <span>🏪</span>
+        <span>Comercio & Clasificados</span>
+      </button>
+      <button onclick="selectTab('comunidad')" id="btn-comunidad" class="tab-item py-2.5 px-4 rounded-xl text-[var(--muted-foreground)] hover:bg-[var(--card)] transition flex items-center space-x-2 whitespace-nowrap">
+        <span>💬</span>
+        <span>Muro & Votaciones</span>
+      </button>
+      <button onclick="selectTab('instalaciones')" id="btn-instalaciones" class="tab-item py-2.5 px-4 rounded-xl text-[var(--muted-foreground)] hover:bg-[var(--card)] transition flex items-center space-x-2 whitespace-nowrap">
+        <span>📅</span>
+        <span>Espacios & Servicios</span>
+      </button>
+    </div>
+
+    <!-- ============================================== -->
+    <!-- TAB 1: SEGURIDAD Y BOTÓN DE PÁNICO -->
+    <!-- ============================================== -->
+    <div id="view-seguridad" class="space-y-5">
+      
+      <!-- BOTÓN DE PÁNICO -->
+      <div class="bg-[var(--card)] border border-red-500/30 rounded-2xl p-6 text-center shadow-sm">
+        <h2 class="text-lg font-bold">Botón de Pánico Vecinal</h2>
+        <p class="text-xs text-[var(--muted-foreground)] max-w-md mx-auto mt-1 mb-5">
+          Pulsa el botón ante cualquier emergencia. Se transmitirá tu alerta y ubicación a la central de Serenazgo y a los vecinos de tu cuadrante.
+        </p>
+
+        <div class="flex justify-center my-2">
+          <button onclick="openPanicModal()" class="w-36 h-36 rounded-full bg-red-600 hover:bg-red-700 text-white font-black text-xl shadow-2xl panic-anim flex flex-col items-center justify-center transition active:scale-95 border-4 border-white/80">
+            <span class="text-3xl mb-1">🚨</span>
+            <span>PÁNICO</span>
+          </button>
+        </div>
+        <p class="text-xs text-red-500 font-medium mt-3">Al presionar se notifica en tiempo real vía WebSockets</p>
+
+        <!-- TELÉFONOS DE EMERGENCIA DE 1 TOQUE -->
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5 mt-6 pt-5 border-t border-[var(--border)] text-xs">
+          <a href="tel:105" class="p-3 bg-[var(--background)] border border-[var(--border)] rounded-xl text-center hover:opacity-80 transition block">
+            <span class="text-[var(--muted-foreground)]">Policía Nacional</span>
+            <p class="font-bold text-sm mt-0.5">📞 105</p>
+          </a>
+          <a href="tel:116" class="p-3 bg-[var(--background)] border border-[var(--border)] rounded-xl text-center hover:opacity-80 transition block">
+            <span class="text-[var(--muted-foreground)]">Bomberos</span>
+            <p class="font-bold text-sm mt-0.5">📞 116</p>
+          </a>
+          <a href="tel:106" class="p-3 bg-[var(--background)] border border-[var(--border)] rounded-xl text-center hover:opacity-80 transition block">
+            <span class="text-[var(--muted-foreground)]">Ambulancia SAMU</span>
+            <p class="font-bold text-sm mt-0.5">📞 106</p>
+          </a>
+          <a href="tel:014567890" class="p-3 bg-[var(--background)] border border-[var(--border)] rounded-xl text-center hover:opacity-80 transition block">
+            <span class="text-[var(--muted-foreground)]">Serenazgo Sectorial</span>
+            <p class="font-bold text-sm mt-0.5">📞 01-456-7890</p>
+          </a>
+        </div>
+      </div>
+
+      <!-- REPORTE DE INCIDENCIAS -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <!-- FORMULARIO -->
+        <div class="bg-[var(--card)] border border-[var(--border)] rounded-2xl p-5 shadow-sm space-y-3">
+          <h3 class="font-bold text-sm flex items-center space-x-1.5">
+            <span>⚠️</span>
+            <span>Reportar Incidencia Comunitaria</span>
+          </h3>
+          <p class="text-xs text-[var(--muted-foreground)]">Informa averías, luminarias quemadas o acumulación de basura.</p>
+          
+          <form onsubmit="addIncident(event)" class="space-y-2.5 text-xs">
+            <div>
+              <label class="font-semibold block mb-1">Categoría</label>
+              <select id="incCat" class="w-full p-2 rounded-lg bg-[var(--background)] border border-[var(--border)]">
+                <option value="Luminaria apagada">💡 Luminaria pública sin luz</option>
+                <option value="Basura / Desmonte">🗑️ Basura acumulada en la vereda</option>
+                <option value="Bache peligroso">🕳️ Bache / Pista deteriorada</option>
+                <option value="Fuga de agua">💧 Fuga de agua potable</option>
+              </select>
+            </div>
+            <div>
+              <label class="font-semibold block mb-1">Dirección / Referencia</label>
+              <input type="text" id="incRef" placeholder="Ej: Calle Los Pinos frente al parque #142" required class="w-full p-2 rounded-lg bg-[var(--background)] border border-[var(--border)]" />
+            </div>
+            <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 rounded-lg transition">
+              Publicar Incidencia
+            </button>
+          </form>
+        </div>
+
+        <!-- LISTA DE INCIDENCIAS EN CURSO -->
+        <div class="bg-[var(--card)] border border-[var(--border)] rounded-2xl p-5 shadow-sm">
+          <h3 class="font-bold text-sm mb-3">Historial de Incidencias</h3>
+          <div id="incidentsContainer" class="space-y-2.5 text-xs">
+            <!-- Incidencias dinámicas -->
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ============================================== -->
+    <!-- TAB 2: COMERCIO Y CLASIFICADOS -->
+    <!-- ============================================== -->
+    <div id="view-comercio" class="space-y-4 hidden">
+      <div class="flex items-center justify-between">
+        <div>
+          <h2 class="text-lg font-bold">Comercio Local y Clasificados</h2>
+          <p class="text-xs text-[var(--muted-foreground)]">Emprendimientos, bodegas, comida y servicios técnicos del barrio.</p>
+        </div>
+        <button onclick="newBusinessPrompt()" class="bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold px-3 py-2 rounded-xl transition">
+          + Agregar Negocio
+        </button>
+      </div>
+
+      <!-- CATEGORÍAS -->
+      <div class="flex gap-2 overflow-x-auto text-xs pb-1">
+        <button onclick="renderCommerce('ALL')" class="bg-blue-600 text-white px-3 py-1.5 rounded-full font-medium">Todos</button>
+        <button onclick="renderCommerce('COMIDA')" class="bg-[var(--card)] border border-[var(--border)] px-3 py-1.5 rounded-full font-medium">🍔 Comida</button>
+        <button onclick="renderCommerce('BODEGA')" class="bg-[var(--card)] border border-[var(--border)] px-3 py-1.5 rounded-full font-medium">🛒 Bodegas</button>
+        <button onclick="renderCommerce('OFICIOS')" class="bg-[var(--card)] border border-[var(--border)] px-3 py-1.5 rounded-full font-medium">🔧 Electricistas & Plomeros</button>
+        <button onclick="renderCommerce('CLASIFICADOS')" class="bg-[var(--card)] border border-[var(--border)] px-3 py-1.5 rounded-full font-medium">🏷️ Segunda Mano</button>
+      </div>
+
+      <!-- LISTA DE COMERCIOS -->
+      <div id="commerceContainer" class="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <!-- Renderizado dinámico -->
+      </div>
+    </div>
+
+    <!-- ============================================== -->
+    <!-- TAB 3: VIDA COMUNITARIA Y SOCIAL -->
+    <!-- ============================================== -->
+    <div id="view-comunidad" class="space-y-4 hidden">
+      
+      <!-- ENCUESTA ACTIVA DE LA JUNTA -->
+      <div class="bg-[var(--card)] border border-purple-500/30 rounded-2xl p-5 shadow-sm space-y-3">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-bold uppercase tracking-wider text-purple-600 bg-purple-500/10 px-2.5 py-0.5 rounded-md">Votación Oficial de la Junta</span>
+          <span class="text-xs text-[var(--muted-foreground)]">Expira en 3 días</span>
+        </div>
+        <h3 class="font-bold text-sm">¿En qué obra prioritaria debemos invertir el fondo vecinal este mes?</h3>
+        <div id="pollOptions" class="space-y-2 text-xs">
+          <!-- Opciones de voto -->
+        </div>
+      </div>
+
+      <!-- MURO VECINAL -->
+      <div class="bg-[var(--card)] border border-[var(--border)] rounded-2xl p-5 shadow-sm space-y-4">
+        <h3 class="font-bold text-sm">Muro Comunitario</h3>
+        
+        <!-- PUBLICAR -->
+        <form onsubmit="addPost(event)" class="space-y-2">
+          <textarea id="postContent" rows="2" placeholder="Comparte un aviso, consulta o agradecimiento con los vecinos..." required class="w-full p-2.5 text-xs rounded-xl bg-[var(--background)] border border-[var(--border)]"></textarea>
+          <div class="flex justify-end">
+            <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs px-4 py-2 rounded-lg transition">
+              Publicar Mensaje
+            </button>
+          </div>
+        </form>
+
+        <div id="postsContainer" class="space-y-3 pt-2">
+          <!-- Posts dinámicos -->
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ============================================== -->
+    <!-- TAB 4: INSTALACIONES Y OBJETOS PERDIDOS -->
+    <!-- ============================================== -->
+    <div id="view-instalaciones" class="space-y-5 hidden">
+      
+      <div>
+        <h2 class="text-lg font-bold">Reserva de Instalaciones Comunes</h2>
+        <p class="text-xs text-[var(--muted-foreground)]">Reserva tu turno sin cruces de horario.</p>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <div class="bg-[var(--card)] border border-[var(--border)] rounded-2xl p-4 shadow-sm flex flex-col justify-between space-y-3">
+          <div>
+            <span class="text-2xl">⚽</span>
+            <h3 class="font-bold text-sm mt-1">Cancha Sintética</h3>
+            <p class="text-xs text-[var(--muted-foreground)] mt-1">Cancha de fútbol 6 con iluminación nocturna.</p>
+          </div>
+          <button onclick="bookFacility('Cancha Sintética')" class="w-full bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold py-2 rounded-xl transition">
+            Reservar Turno
+          </button>
+        </div>
+
+        <div class="bg-[var(--card)] border border-[var(--border)] rounded-2xl p-4 shadow-sm flex flex-col justify-between space-y-3">
+          <div>
+            <span class="text-2xl">🎉</span>
+            <h3 class="font-bold text-sm mt-1">Salón Comunal (SUM)</h3>
+            <p class="text-xs text-[var(--muted-foreground)] mt-1">Capacidad 40 personas para cumpleaños o talleres.</p>
+          </div>
+          <button onclick="bookFacility('Salón Comunal (SUM)')" class="w-full bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold py-2 rounded-xl transition">
+            Reservar Turno
+          </button>
+        </div>
+
+        <div class="bg-[var(--card)] border border-[var(--border)] rounded-2xl p-4 shadow-sm flex flex-col justify-between space-y-3">
+          <div>
+            <span class="text-2xl">🥩</span>
+            <h3 class="font-bold text-sm mt-1">Zona de Parrillas</h3>
+            <p class="text-xs text-[var(--muted-foreground)] mt-1">Parrillero de acero inoxidable y mesas al aire libre.</p>
+          </div>
+          <button onclick="bookFacility('Zona de Parrillas')" class="w-full bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold py-2 rounded-xl transition">
+            Reservar Turno
+          </button>
+        </div>
+      </div>
+
+      <!-- OBJETOS PERDIDOS -->
+      <div class="bg-[var(--card)] border border-[var(--border)] rounded-2xl p-5 shadow-sm space-y-3">
+        <div class="flex items-center justify-between">
+          <h3 class="font-bold text-sm">Objetos Perdidos y Encontrados</h3>
+          <button onclick="addLostItemPrompt()" class="text-xs text-blue-600 font-semibold hover:underline">
+            + Reportar Objeto
+          </button>
+        </div>
+        <div id="lostContainer" class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs">
+          <!-- Renderizado -->
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+
+  <!-- MODAL DE PÁNICO -->
+  <div id="panicModal" class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div class="bg-[var(--card)] border border-[var(--border)] rounded-3xl max-w-sm w-full p-6 text-center space-y-4 shadow-2xl">
+      <span class="text-4xl">🚨</span>
+      <h3 class="font-bold text-base">Selecciona el Tipo de Emergencia</h3>
+      <p class="text-xs text-[var(--muted-foreground)]">Se emitirá de inmediato con tu dirección registrada.</p>
+
+      <div class="grid grid-cols-1 gap-2 text-xs font-semibold">
+        <button onclick="triggerPanicSOS('SEGURIDAD', 'Robo / Sospechoso en vía pública')" class="p-3 bg-red-500/10 hover:bg-red-500/20 text-red-600 border border-red-500/30 rounded-xl text-left">
+          🚨 Seguridad (Asalto o Sospechoso)
+        </button>
+        <button onclick="triggerPanicSOS('MEDICA', 'Emergencia de Salud / Accidente')" class="p-3 bg-blue-500/10 hover:bg-blue-500/20 text-blue-600 border border-blue-500/30 rounded-xl text-left">
+          🚑 Médica (Ambulancia requerida)
+        </button>
+        <button onclick="triggerPanicSOS('INCENDIO', 'Fuego o Fuga Inflamable')" class="p-3 bg-orange-500/10 hover:bg-orange-500/20 text-orange-600 border border-orange-500/30 rounded-xl text-left">
+          🔥 Incendio / Explosión
+        </button>
+      </div>
+
+      <button onclick="closeModal('panicModal')" class="w-full text-xs text-[var(--muted-foreground)] py-1 font-semibold">
+        Cancelar
+      </button>
+    </div>
+  </div>
+
+  <!-- LÓGICA DE APLICACIÓN -->
+  <script>
+    const APP = {
+      incidents: [
+        { id: 1, title: 'Luminaria apagada', ref: 'Frente al parque Los Pinos', status: 'REPORTADO', time: 'Hace 1h' },
+        { id: 2, title: 'Bache peligroso', ref: 'Cruce con Av. Principal', status: 'EN_PROCESO', time: 'Ayer' }
+      ],
+      commerce: [
+        { name: 'Bodega Don Pepe', cat: 'BODEGA', desc: 'Abarrotes, pan y bebidas frescas', phone: '987654321', rating: '4.8' },
+        { name: 'Pizzería El Rincón', cat: 'COMIDA', desc: 'Delivery sin recargo dentro del barrio', phone: '912345678', rating: '4.9' },
+        { name: 'Gasitería & Electricidad Hugo', cat: 'OFICIOS', desc: 'Atención de emergencias 24/7', phone: '955443322', rating: '5.0' },
+        { name: 'Bicicleta Montaña Aro 26', cat: 'CLASIFICADOS', desc: 'Segunda mano en excelente estado ($80)', phone: '944332211', rating: 'Vecino' }
+      ],
+      poll: {
+        voted: false,
+        options: [
+          { id: '1', text: 'Cámaras de seguridad en esquinas', votes: 54 },
+          { id: '2', text: 'Iluminación LED para pasajes', votes: 72 },
+          { id: '3', text: 'Mantenimiento de juegos infantiles', votes: 31 }
+        ]
+      },
+      posts: [
+        { author: 'Junta Vecinal', tag: 'OFICIAL', text: 'Este sábado a las 09:00 AM se realizará la faena comunitaria de poda de árboles y limpieza.', time: 'Hace 2 horas' },
+        { author: 'Rosa Morales', tag: 'VECINO', text: '¿Alguien tiene el contacto de un técnico de refrigeradoras de confianza?', time: 'Hace 4 horas' }
+      ],
+      lostItems: [
+        { title: 'Llaves de auto con llavero azul', type: 'ENCONTRADO', contact: 'Guardadas en conserjería' },
+        { title: 'Perrito Schnauzer gris (Toby)', type: 'PERDIDO', contact: 'Llamar al 999888777' }
+      ]
+    };
+
+    function selectTab(tab) {
+      ['seguridad', 'comercio', 'comunidad', 'instalaciones'].forEach(t => {
+        document.getElementById(`view-${t}`).classList.add('hidden');
+        const btn = document.getElementById(`btn-${t}`);
+        btn.classList.remove('bg-blue-600', 'text-white');
+        btn.classList.add('text-[var(--muted-foreground)]');
+      });
+      document.getElementById(`view-${tab}`).classList.remove('hidden');
+      const activeBtn = document.getElementById(`btn-${tab}`);
+      activeBtn.classList.add('bg-blue-600', 'text-white');
+      activeBtn.classList.remove('text-[var(--muted-foreground)]');
+    }
+
+    function openPanicModal() {
+      document.getElementById('panicModal').classList.remove('hidden');
+    }
+
+    function closeModal(id) {
+      document.getElementById(id).classList.add('hidden');
+    }
+
+    function triggerPanicSOS(type, label) {
+      closeModal('panicModal');
+      const banner = document.getElementById('liveAlertBanner');
+      const msg = document.getElementById('liveAlertMessage');
+      msg.innerText = `🚨 ALERTA ACTIVA: ${label} emitida por Ana Morales (Calle Los Pinos 142)`;
+      banner.classList.remove('hidden');
+      alert(`¡ALERTA EMITIDA CON ÉXITO!\n\nSe ha alertado a la red de vecinos, serenazgo y bomberos con tu ubicación.`);
+    }
+
+    function dismissAlert() {
+      document.getElementById('liveAlertBanner').classList.add('hidden');
+    }
+
+    function renderIncidents() {
+      const container = document.getElementById('incidentsContainer');
+      container.innerHTML = APP.incidents.map(i => `
+        <div class="p-2.5 rounded-xl bg-[var(--background)] border border-[var(--border)] flex justify-between items-center">
+          <div>
+            <p class="font-bold">${i.title}</p>
+            <p class="text-[var(--muted-foreground)]">${i.ref}</p>
+          </div>
+          <span class="text-[11px] font-bold px-2 py-0.5 rounded ${i.status === 'REPORTADO' ? 'bg-amber-500/20 text-amber-600' : 'bg-blue-500/20 text-blue-600'}">${i.status}</span>
+        </div>
+      `).join('');
+    }
+
+    function addIncident(e) {
+      e.preventDefault();
+      const cat = document.getElementById('incCat').value;
+      const ref = document.getElementById('incRef').value;
+      APP.incidents.unshift({ id: Date.now(), title: cat, ref, status: 'REPORTADO', time: 'Recién' });
+      renderIncidents();
+      document.getElementById('incRef').value = '';
+      alert('Incidencia registrada.');
+    }
+
+    function renderCommerce(filter = 'ALL') {
+      const container = document.getElementById('commerceContainer');
+      const list = filter === 'ALL' ? APP.commerce : APP.commerce.filter(c => c.cat === filter);
+      container.innerHTML = list.map(c => `
+        <div class="p-4 bg-[var(--card)] border border-[var(--border)] rounded-2xl flex justify-between items-start">
+          <div class="space-y-1">
+            <div class="flex items-center space-x-2">
+              <h4 class="font-bold text-sm">${c.name}</h4>
+              <span class="text-[11px] text-amber-500 font-semibold">⭐ ${c.rating}</span>
+            </div>
+            <p class="text-xs text-[var(--muted-foreground)]">${c.desc}</p>
+          </div>
+          <a href="https://wa.me/51${c.phone}" target="_blank" class="bg-emerald-600 text-white font-semibold text-xs px-3 py-1.5 rounded-lg whitespace-nowrap">
+            WhatsApp
+          </a>
+        </div>
+      `).join('');
+    }
+
+    function newBusinessPrompt() {
+      const name = prompt('Nombre del negocio o servicio:');
+      if (!name) return;
+      const desc = prompt('Descripción del servicio/producto:');
+      const phone = prompt('Número de teléfono/WhatsApp:');
+      APP.commerce.unshift({ name, cat: 'OFICIOS', desc: desc || '', phone: phone || '999999999', rating: '5.0' });
+      renderCommerce();
+      alert('¡Negocio añadido al catálogo del barrio!');
+    }
+
+    function renderPoll() {
+      const container = document.getElementById('pollOptions');
+      const total = APP.poll.options.reduce((acc, o) => acc + o.votes, 0);
+      container.innerHTML = APP.poll.options.map(o => {
+        const pct = Math.round((o.votes / total) * 100);
+        return `
+          <button onclick="vote('${o.id}')" class="w-full text-left p-2.5 rounded-xl border border-[var(--border)] bg-[var(--background)] hover:border-purple-500 transition relative overflow-hidden">
+            <div class="flex justify-between relative z-10 font-medium">
+              <span>${o.text}</span>
+              <span class="text-purple-600 font-bold">${pct}% (${o.votes})</span>
+            </div>
+            <div class="absolute inset-y-0 left-0 bg-purple-500/15 z-0" style="width: ${pct}%"></div>
+          </button>
+        `;
+      }).join('');
+    }
+
+    function vote(id) {
+      if (APP.poll.voted) {
+        alert('Ya registraste tu voto en esta consulta.');
+        return;
+      }
+      const opt = APP.poll.options.find(o => o.id === id);
+      if (opt) opt.votes++;
+      APP.poll.voted = true;
+      renderPoll();
+      alert('¡Voto contabilizado con éxito!');
+    }
+
+    function renderPosts() {
+      const container = document.getElementById('postsContainer');
+      container.innerHTML = APP.posts.map(p => `
+        <div class="p-3 bg-[var(--background)] border border-[var(--border)] rounded-xl space-y-1">
+          <div class="flex items-center justify-between text-xs">
+            <span class="font-bold">${p.author}</span>
+            <span class="text-[var(--muted-foreground)]">${p.time}</span>
+          </div>
+          <p class="text-xs text-[var(--foreground)]">${p.text}</p>
+        </div>
+      `).join('');
+    }
+
+    function addPost(e) {
+      e.preventDefault();
+      const text = document.getElementById('postContent').value;
+      APP.posts.unshift({ author: 'Ana Morales', tag: 'VECINO', text, time: 'Ahora' });
+      renderPosts();
+      document.getElementById('postContent').value = '';
+    }
+
+    function bookFacility(name) {
+      const date = prompt(`Ingresa la fecha para reservar ${name} (AAAA-MM-DD):`, '2026-11-02');
+      if (!date) return;
+      alert(`¡Reserva confirmada!\nEspacio: ${name}\nFecha: ${date}\nTurno: 19:00 - 21:00 hrs.\nSe notificó a la junta para habilitar las llaves.`);
+    }
+
+    function renderLost() {
+      const container = document.getElementById('lostContainer');
+      container.innerHTML = APP.lostItems.map(l => `
+        <div class="p-3 bg-[var(--background)] border border-[var(--border)] rounded-xl">
+          <span class="text-[11px] font-bold px-1.5 py-0.5 rounded ${l.type === 'PERDIDO' ? 'bg-red-500/20 text-red-600' : 'bg-emerald-500/20 text-emerald-600'}">${l.type}</span>
+          <p class="font-bold mt-1">${l.title}</p>
+          <p class="text-[var(--muted-foreground)]">${l.contact}</p>
+        </div>
+      `).join('');
+    }
+
+    function addLostItemPrompt() {
+      const title = prompt('¿Qué objeto perdiste o encontraste?:');
+      if (!title) return;
+      const contact = prompt('Tu teléfono de contacto:');
+      APP.lostItems.unshift({ title, type: 'ENCONTRADO', contact: contact || 'Junta Vecinal' });
+      renderLost();
+      alert('Publicado en objetos perdidos.');
+    }
+
+    // Inicio
+    renderIncidents();
+    renderCommerce();
+    renderPoll();
+    renderPosts();
+    renderLost();
+  </script>
+</body>
+</html>
